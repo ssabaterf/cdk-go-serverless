@@ -26,7 +26,8 @@ type App struct {
 type Request struct {
 }
 type Response struct {
-	Message string `json:"message"`
+	Message string            `json:"message"`
+	Headers map[string]string `json:"headers"`
 }
 
 type ErrorRes struct {
@@ -41,6 +42,7 @@ func NewApp(id string) *App {
 func (app *App) Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	resBody := Response{
 		Message: "POOOOOoooonnngggg",
+		Headers: request.Headers,
 	}
 	resByte, err := json.Marshal(resBody)
 
