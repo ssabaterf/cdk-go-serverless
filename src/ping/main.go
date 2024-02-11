@@ -4,20 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
+	"region-info/common"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
-
-var headersError = map[string]string{"Content-Type": "application/json"}
-var headersResponse = map[string]string{
-	"Content-Type":                     "application/json",
-	"Access-Control-Allow-Origin":      "*",
-	"Access-Control-Allow-Methods":     "GET, POST, PUT, DELETE, OPTIONS, HEAD",
-	"Access-Control-Allow-Headers":     "Content-Type, Authorization, X-Amz-Date, X-Api-Key, X-Amz-Security-Token",
-	"Access-Control-Allow-Credentials": "true",
-}
 
 type App struct {
 	id string
@@ -35,11 +26,11 @@ type ErrorRes struct {
 }
 
 func NewApp(id string) *App {
-	log.Println("NewApp")
 	return &App{id: id}
 }
 
 func (app *App) Handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("Handler: %v", request)
 	resBody := Response{
 		Message: "POOOOOoooonnngggg",
 		Headers: request.Headers,
@@ -47,28 +38,17 @@ func (app *App) Handler(request events.APIGatewayProxyRequest) (events.APIGatewa
 	resByte, err := json.Marshal(resBody)
 
 	if err != nil {
-		log.Println("Error2: ", err.Error())
-		text := fmt.Sprintf("Internal Server Error. %v", err.Error())
-		errorRes := ErrorRes{Message: text}
-		resByte, _ := json.Marshal(errorRes)
-		return events.APIGatewayProxyResponse{
-			Body:       string(resByte),
-			StatusCode: http.StatusInternalServerError,
-			Headers:    headersError,
-		}, nil
+		log.Println("Error: ", err.Error())
+		errorRes := ErrorRes{Message: fmt.Sprintf("Internal Server Error. %v", err.Error())}
+		return common.ResInternalError(errorRes), nil
 	}
 
 	log.Printf("Response: %+v ", string(resByte))
-	response := events.APIGatewayProxyResponse{
-		Body:       string(resByte),
-		StatusCode: http.StatusOK,
-		Headers:    headersResponse,
-	}
+	response := common.ResOk(resByte)
 	return response, nil
 }
 
 func main() {
-	log.Println("Start Ping Lambda")
 	app := NewApp("PingLambda")
 	log.Println("Start Lambda")
 	lambda.Start(app.Handler)
